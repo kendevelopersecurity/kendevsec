@@ -1,0 +1,17 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() { return request.auth != null && request.auth.token.email == 'GANTI_DENGAN_EMAIL_ADMIN_ANDA'; }
+    match /services/{id} { allow read: if true; allow create, update, delete: if isAdmin(); }
+    match /articles/{id} { allow read: if resource.data.published == true || isAdmin(); allow create, update, delete: if isAdmin(); }
+    match /faqs/{id} { allow read: if true; allow create, update, delete: if isAdmin(); }
+    match /testimonials/{id} { allow read: if true; allow create, update, delete: if isAdmin(); }
+    match /customSections/{id} { allow read: if resource.data.active == true || isAdmin(); allow create, update, delete: if isAdmin(); }
+    match /site/{id} { allow read: if id == 'settings'; allow create, update, delete: if isAdmin(); }
+    // Orders may be created by visitors with strict field validation; only admin can read/update/delete.
+    match /orders/{id} { allow create: if request.resource.data.keys().hasAll(['name','service','status','createdAt']) && request.resource.data.name is string && request.resource.data.name.size() <= 100 && request.resource.data.service is string && request.resource.data.service.size() <= 160 && request.resource.data.status == 'Menunggu'; allow read, update, delete: if isAdmin(); }
+    match /adminUsers/{id} { allow read, write: if isAdmin(); }
+    match /auditLogs/{id} { allow read: if isAdmin(); allow create: if isAdmin(); allow update, delete: if false; }
+    match /{document=**} { allow read, write: if false; }
+  }
+}
